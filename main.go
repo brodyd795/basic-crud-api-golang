@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"log"
+	"math/rand"
 	"net/http"
+	"strconv"
 )
 
 func moviesHandler(w http.ResponseWriter, r *http.Request) {
@@ -29,6 +31,14 @@ func movieHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf("Movie with ID %s not found", id)))
 }
 
+func createHandler(w http.ResponseWriter, r *http.Request) {
+	var movie Movie
+	_ = json.NewDecoder(r.Body).Decode(&movie)
+	movie.ID = strconv.Itoa(rand.Intn(100000000))
+	movies = append(movies, movie)
+	json.NewEncoder(w).Encode(movie)
+}
+
 type Movie struct {
 	ID       string    `json:"id"`
 	Isbn     string    `json:"isbn"`
@@ -50,6 +60,7 @@ func main() {
 
 	r.HandleFunc("/movies", moviesHandler).Methods("GET")
 	r.HandleFunc("/movie/{id}", movieHandler).Methods("GET")
+	r.HandleFunc("/movie", createHandler).Methods("POST")
 
 	fmt.Printf("Listening on port 8080...\n")
 	log.Fatal(http.ListenAndServe(":8080", r))
