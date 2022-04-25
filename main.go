@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-func moviesHandler(w http.ResponseWriter, r *http.Request) {
+func moviesHandler(w http.ResponseWriter, _ *http.Request) {
 	json.NewEncoder(w).Encode(movies)
 }
 
@@ -39,6 +39,33 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(movie)
 }
 
+func deleteHandler(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+
+	for index, movie := range movies {
+		if movie.ID == id {
+			movies[index] = movies[len(movies)-1]
+			movies = movies[:len(movies)-1]
+			break
+		}
+	}
+}
+
+func updateHandler(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+
+	var updatedMovie Movie
+	json.NewDecoder(r.Body).Decode(&updatedMovie)
+
+	for index, movie := range movies {
+		if movie.ID == id {
+			movies[index] = updatedMovie
+			json.NewEncoder(w).Encode(updatedMovie)
+			return
+		}
+	}
+}
+
 type Movie struct {
 	ID       string    `json:"id"`
 	Isbn     string    `json:"isbn"`
@@ -61,6 +88,8 @@ func main() {
 	r.HandleFunc("/movies", moviesHandler).Methods("GET")
 	r.HandleFunc("/movie/{id}", movieHandler).Methods("GET")
 	r.HandleFunc("/movie", createHandler).Methods("POST")
+	r.HandleFunc("/movie/{id}", deleteHandler).Methods("DELETE")
+	r.HandleFunc("/movie/{id}", updateHandler).Methods("PUT")
 
 	fmt.Printf("Listening on port 8080...\n")
 	log.Fatal(http.ListenAndServe(":8080", r))
